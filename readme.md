@@ -27,9 +27,8 @@ https://www.digitalocean.com/
 
 ### Root Login
 To login to your server you need two things:
-	
-	Your server's public IP address
-	Your password set up in Digital Ocean OR the private key you installed for that server
+1. Your server's public IP address
+2. Your password set up in Digital Ocean OR the private key you installed for that server
 	
 Once you have those, in terminal you can run:
 
