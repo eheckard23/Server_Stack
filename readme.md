@@ -9,10 +9,15 @@ Register for an account here
 https://www.digitalocean.com/
 
 Create a droplet
+![image](https://user-images.githubusercontent.com/17580530/27603515-4db92654-5b44-11e7-9e43-29093e963e38.png)
 
 Select Ubuntu 16.04.2 x64
+![image](https://user-images.githubusercontent.com/17580530/27603543-657ad4ae-5b44-11e7-9dd0-e4d7d6de8432.png)
+
 Select server size (5/mo)
+![image](https://user-images.githubusercontent.com/17580530/27603553-6df97590-5b44-11e7-9cca-2c9847b2840a.png)
 Select datacenter region **closest to you**
+![image](https://user-images.githubusercontent.com/17580530/27603568-796689ae-5b44-11e7-9e2d-960e72f6322f.png)
 Don't worry about private networking/backups/etc
 Add SSH key if you have one already. If not, https://www.digitalocean.com/community/tutorials/how-to-use-ssh-keys-with-digitalocean-droplets
 Select how many droplets you want and give each server a name
