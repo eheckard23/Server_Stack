@@ -497,3 +497,101 @@ Then add the following line to set up auto-renewal for your certificates.
 Save and Close the file
 
 Hit `CTRL-x` to close then `y` to confirm changes and `ENTER` to confirm the filename.
+
+## Create a MySQL(MariaDB) Database for Wordpress
+If you're logged in to your server through your own sudo user, log in to MariaDB by running:
+
+`sudo mysql -u root -p`
+
+Enter the `root` password for your MariaDB shell.
+
+Then create a WordPress database by running:
+
+**Note: All commands ran in MariaDB - *terminal will display MariaDB [(none)]>* - need a semi-colon ;**
+
+`MariaDB [(none)]> CREATE DATABASE wordpress DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci;`
+
+Next, you can create a new MySQL user for this specific database with a password, and access to this database by running:
+
+***Change the wordpressuser to whatever username you like. Also be sure to choose a strong password for the user***
+
+`MariaDB [(none)]> GRANT ALL ON wordpress.* TO 'wordpressuser'@'localhost' IDENTIFIED BY 'password';`
+
+Now that you have access to the database and user account, let MariaDB know about the changes by running:
+
+`MariaDB [(none)]> FLUSH PRIVILEGES;`
+
+Then run `MariaDB [(none)]> EXIT;`
+
+Next, you need to let Nginx know to correctly use WordPress.
+
+Open the server block file with:
+
+`$ sudo nano /etc/nginx/sites-available/default`
+
+Then add the following within the SSL configuration server block just below the `location /` block.
+
+```bash
+location = /favicon.ico { log_not_found off; access_log off; }
+location = /robots.txt { log_not_found off; access_log off; allow all; }
+location ~* \.(css|gif|ico|jpeg|jpg|js|png)$ {
+        expires max;
+        log_not_found off;
+}
+```
+
+Then, inside of the `location /` block make the following adjustments:
+
+```bash
+location / {
+                # First attempt to serve request as file, then
+                # as directory, then fall back to displaying a 404.
+                #try_files $uri $uri/ =404;
+                try_files $uri $uri/ /index.php$is_args$args;
+        }
+```
+
+Double check there aren't any errors with the configuration:
+
+`$ sudo nginx -t`
+
+Then reload Nginx with:
+
+`$ sudo systemctl reload nginx`
+
+Next, you need to install some PHP extensions for working with Wordpress.
+
+Make sure the local package index is update:
+
+`$ sudo apt-get update`
+
+Then install the packages:
+
+`$ sudo apt-get install -y php-curl php-gd php-mbstring php-mcrypt php-xml php-xmlrpc`
+
+Once the packages are installed, restart the PHP-FPM process to use the newly installed features:
+
+`$ sudo systemctl restart php7.0-fpm`
+
+Now you can install WordPress.
+
+Change into a writable directory and download the latest compressed release
+
+* `$ cd /tmp`
+* `$ curl -O https://wordpress.org/latest.tar.gz`
+
+Extract the compressed file:
+
+`$ tar xzvf latest.tar.gz`
+
+Copy the sample config file to the filename WordPress reads:
+
+`$ cp /tmp/wordpress/wp-config-sample.php /tmp/wordpress/wp-config.php`
+
+Create the `upgrade` directory to avoid permissions issues when WordPress updates its software
+
+`$ mkdir /tmp/wordpress/wp-content/upgrade`
+
+Copy the WordPress directory into our document root `/var/www/html/`
+
+`$ sudo cp -a /tmp/wordpress/. /var/www/html`
