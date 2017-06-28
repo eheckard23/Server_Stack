@@ -1,5 +1,8 @@
-## Local Installation
+##### This codebase is to go over the entire [step-by-step process](https://github.com/eheckard23/Server_Stack/blob/master/setup.md) of setting up a remote Ubuntu 16.04 server securely with Linux, Nginx, MariaDB, and PHP. Once that is complete, the [SCP Deployment](#scp-depolyment) section covers how to transfer basic files from your local machine to your remote server.
 
+## Local Installation
+## Server Setup
+[This document](https://github.com/eheckard23/Server_Stack/blob/master/setup.md) goes through the entire process of setting up an Ubuntu 16.04 with a full LEMP stack and HTTPS configuration.
 
 ## SCP Deployment
 
@@ -9,6 +12,8 @@ For this process, you will need to have:
 	• A Ubuntu 16.04 server
 	• A non `root` user
 	• Your public IP address
+	
+If you don't have any of these things, follow the [server setup guide](https://github.com/eheckard23/Server_Stack/blob/master/setup.md) on where to start.
 
 * Find and open the file `humans.txt` within this repository.
 * In the top right section, click "Raw" for this file
@@ -56,5 +61,3 @@ Now, you can login to your server using your `sudo` user and find that the file 
 `$ ls /var/www/html`
 
 Make sure you are able to locate the `humans.txt` file and you have completed basic SCP deployment.
-
-## Server Setup
