@@ -1,4 +1,4 @@
-##### This codebase is to go over the entire [step-by-step process](https://github.com/eheckard23/Server_Stack/blob/master/setup.md) of setting up a remote Ubuntu 16.04 server securely with Linux, Nginx, MariaDB, and PHP. Once that is complete, the [SCP Deployment](#scp-deployment) section covers how to transfer basic files from your local machine to your remote server.
+#### This codebase is to go over the entire [step-by-step process](https://github.com/eheckard23/Server_Stack/blob/master/setup.md) of setting up a remote Ubuntu 16.04 server securely with Linux, Nginx, MariaDB, and PHP. Once that is complete, the [SCP Deployment](#scp-deployment) section covers how to transfer basic files from your local machine to your remote server.
 
 ## Local Installation
 ## Server Setup
