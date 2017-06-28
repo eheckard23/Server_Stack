@@ -182,3 +182,318 @@ Double check the status of your firewall by running:
 IMAGE
 
 At this point your server is securely set up and you can begin to install any software you may need.
+
+## Install Linux, Nginx, MariaDB, and PHP
+
+### Nginx
+First off, log in to your server via SSH using your newly created user. Then, update your local package index and install nginx by running: 
+
+`$ sudo apt-get update`
+
+`$ sudo apt-get install -y nginx`
+
+Since you have the UFW firewall set up, you need to make sure the firewall enables connections to Nginx by running: 
+
+`$ sudo ufw allow 'Nginx HTTP'`
+
+**Make sure you include the single quotes**
+
+Double check the connections to Nginx appear by running:
+
+`$ sudo ufw status`
+
+IMAGE
+
+### MariaDB
+Make sure everything in your local package index is update by running:
+
+`$ sudo apt update -y`
+
+Install "mariadb-server" by running:
+
+`$ sudo apt install -y mariadb-server`
+
+If a pop up asks you to set a new password for the MariaDB `root` user, go ahead and put a strong password in here and press `ENTER`
+
+Confirm it's installed by running:
+
+`$ mysql -V`
+
+IMAGE
+
+Start and enable MariaDB by running:
+
+`$ sudo systemctl start mariadb.service` 
+
+`$ sudo systemctl enable mariadb.service` 
+
+If a service not found error appears, you may just need to restart the service by running:
+
+`$ sudo service mysql restart`
+
+Once MariaDB is up and running, secure the installation by running:
+
+`$ sudo /usr/bin/mysql_secure_installation`
+
+Enter the password you set previously for the `root` user
+
+Hit `n` to skip having to set a new password
+
+Hit `y` to "Remove anonymous users"
+
+Hit `y` to "Disallow root login remotely"
+
+Hit `y` to "Remove test database along with access"
+
+Hit `y` to "Reload privilege tables"
+
+Now that MariaDB is installed, you may log in as `root` locally by running:
+
+`$ sudo mysql -u root -p`
+
+Run `quit` to logout
+
+### PHP
+Nginx does not have native PHP processing, so you need to install "fastCGI process manager" to receive and process those requests. To do so, run:
+
+`$ sudo apt-get install -y php-fpm php-mysql`
+
+To then configure the processor to be more secure open the config file by running:
+
+`$ sudo nano /etc/php/7.0/fpm/php.ini`
+
+Hit `CTRL-w` and type `cgi.fix_pathinfo` then hit `ENTER`
+
+Look for the line that looks like `;cgi.fix_pathinfo=1`
+
+Be sure to **remove** the semi-colon and **set it equal to 0** which should look like this when you're done:
+
+`cgi.fix_pathinfo=0`
+
+Hit `CTRL-x` to close then `y` to confirm changes and `ENTER` to confirm the filename.
+
+Restart the PHP processor by running:
+
+`$ sudo systemctl restart php7.0-fpm`
+
+Now, to let Nginx know to use the PHP processor you need to open the default Nginx server block config file by running:
+
+`$ sudo nano /etc/nginx/sites-available/default`
+
+1.	Add index.php as the first value of the index directive
+2. Set the server name to point to your IP address
+
+IMAGE
+
+3.	Uncomment the entire block starting with `location ~ \.php$`
+4. Uncomment the entire block starting with `location ~ /\.ht`
+IMAGE
+
+Save and Close the file
+
+Hit `CTRL-x` to close then `y` to confirm changes and `ENTER` to confirm the filename.
+
+Test there aren't any syntax errors by running:
+
+`$ sudo nginx -t`
+
+If there are no errors, reload Nginx to make the final changes
+
+`$ sudo systemctl reload nginx`
+
+Once this is reloaded, you should have a full LEMP stack completely set up on your server.
+
+## Secure Nginx with SSL
+#### Prerequisites
+You must own a registered domain name for this process. If you do not wish to register a domain name, you can follow [this guide](https://www.digitalocean.com/community/tutorials/how-to-create-a-self-signed-ssl-certificate-for-nginx-in-ubuntu-16-04) to create a self-signed SSL certificate for Nginx.
+
+### Install Certbot
+Add the certbot repository with:
+
+`$ sudo add-apt-repository ppa:certbot/certbot`
+
+Hit `ENTER` to accept. Then update your local package index with:
+
+`$ sudo apt-get update`
+
+Then, install Certbot with:
+
+`$ sudo apt-get install certbot`
+
+### Obtain an SSL Certificate Using Webroot
+Webroot needs to place a file in the `/.well-known` directory in your document root. Make sure this directory is accessible by running:
+
+`$ sudo nano /etc/nginx/sites-available/default`
+
+Just under the `location ~ /\.ht` block, add this block of code:
+
+IMAGE
+
+Save and Close the file
+
+Hit `CTRL-x` to close then `y` to confirm changes and `ENTER` to confirm the filename.
+
+Test there aren't any syntax errors by running:
+
+`$ sudo nginx -t`
+
+Then restart Nginx with:
+
+`$ sudo systemctl restart nginx`
+
+Next, use Webroot to request an SSL certificate with the domains you own by running:
+
+`$ sudo certbot certonly --webroot --webroot-path=/var/www/html -d <YOUR_DOMAIN>.com`
+
+You may be asked how you would like to authenticate with the "ACME CA." Enter `2` to place files in your webroot directory.
+
+Enter your email address and follow the propmts to agree to the terms of service.
+
+You should see a success message that looks like:
+
+IMAGE
+
+**Safely note down somewhere the path and expiration date highlighted above.**
+
+Check that your certificate files exist by running:
+
+`$ sudo ls -l /etc/letsencrypt/live/<YOUR_DOMAIN>.com`
+
+You should see these 4 files:
+
+IMAGE
+
+To increase security, generate a Diffie-Hellman 2048-bit group by running:
+
+`$ sudo openssl dhparam -out /etc/ssl/certs/dhparam.pem 2048`
+
+Now that you have the SSL certificates, Nginx needs to know to use it by first creating a config file pointing to the SSL key and certificate by running:
+
+`$ sudo nano /etc/nginx/snippets/ssl-<YOUR_DOMAIN>.com.conf`
+
+Then add these 2 lines to set our `ssl_certificate` variable to our full certificate file and the `ssl_certificate_key` to the privkey file.
+
+* `ssl_certificate /etc/letsencrypt/live/<YOUR_DOMAIN>.com/fullchain.pem;`
+* `ssl_certificate_key /etc/letsencrypt/live/<YOUR_DOMAIN>.com/privkey.pem;`
+
+Save and Close the file
+
+Hit `CTRL-x` to close then `y` to confirm changes and `ENTER` to confirm the filename.
+
+Next, to set Nginx with a strong SSL cipher suite, run:
+
+`$ sudo nano /etc/nginx/snippets/ssl-params.conf`
+
+Then simply add the following code:
+
+```bash
+# from https://cipherli.st/
+# and https://raymii.org/s/tutorials/Strong_SSL_Security_On_nginx.html
+
+ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+ssl_prefer_server_ciphers on;
+ssl_ciphers "EECDH+AESGCM:EDH+AESGCM:AES256+EECDH:AES256+EDH";
+ssl_ecdh_curve secp384r1;
+ssl_session_cache shared:SSL:10m;
+ssl_session_tickets off;
+ssl_stapling on;
+ssl_stapling_verify on;
+resolver 8.8.8.8 8.8.4.4 valid=300s;
+resolver_timeout 5s;
+# disable HSTS header for now
+#add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload";
+add_header X-Frame-Options DENY;
+add_header X-Content-Type-Options nosniff;
+
+ssl_dhparam /etc/ssl/certs/dhparam.pem;
+```
+
+Save and Close the file
+
+Hit `CTRL-x` to close then `y` to confirm changes and `ENTER` to confirm the filename.
+
+Then, we again need to let Nginx know to use SSL.
+
+Start by backing up our server block config file:
+
+`$ sudo cp /etc/nginx/sites-available/default /etc/nginx/sites-available/default.bak`
+
+Open the regular file to adjust:
+
+`$ sudo nano /etc/nginx/sites-available/default`
+
+In order to redirect unencrypted HTTP requests to HTTPS, first start by adding a `server_name` directive and a `return 301`:
+
+IMAGE
+
+**Be sure to close off that server block**
+
+Then open up a new server block just underneath this one to hold the rest of the configuration and add the following changes:
+
+IMAGE
+
+Then look for the `server_name` variable within this SSL block and make sure it is set to `<YOUR_DOMAIN>.com;`
+
+Save and Close the file
+
+Hit `CTRL-x` to close then `y` to confirm changes and `ENTER` to confirm the filename.
+
+Next, adjust the UFW firewall to enable SSL traffic. Double check the firewall status with `$ sudo ufw status`
+
+```bash
+Status: active
+
+To                         Action      From
+--                         ------      ----
+OpenSSH                    ALLOW       Anywhere                  
+Nginx HTTP                 ALLOW       Anywhere                  
+OpenSSH (v6)               ALLOW       Anywhere (v6)             
+Nginx HTTP (v6)            ALLOW       Anywhere (v6) 
+```
+
+To allow HTTPS traffic and delete HTTP allowance, run:
+
+* `$ sudo ufw allow 'Nginx Full'`
+* `$ sudo ufw delete allow 'Nginx HTTP'`
+
+Run `$ sudo ufw status` to see the status:
+
+```bash
+Status: active
+
+To                         Action      From
+--                         ------      ----
+OpenSSH                    ALLOW       Anywhere                  
+Nginx Full                 ALLOW       Anywhere                  
+OpenSSH (v6)               ALLOW       Anywhere (v6)             
+Nginx Full (v6)            ALLOW       Anywhere (v6)             
+```
+
+Now, enable the changes in Nginx by first checking for any errors:
+
+`$ sudo nginx -t`
+
+If everything works you should see the output:
+
+```bash
+nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+nginx: configuration file /etc/nginx/nginx.conf test is successful
+```
+
+Next, restart Nginx with:
+
+`$ sudo systemctl restart nginx`
+
+If successful, you can test your domain in a browser and notice that it is responding via HTTPS.
+
+Lastly, by default, SSL certficates are only valid for 90 days. To set up auto-renewal, first:
+
+`$ sudo crontab -e`
+
+Then add the following line to set up auto-renewal for your certificates.
+
+`15 3 * * * /usr/bin/certbot renew --quiet --renew-hook "/bin/systemctl reload nginx"`
+
+Save and Close the file
+
+Hit `CTRL-x` to close then `y` to confirm changes and `ENTER` to confirm the filename.
