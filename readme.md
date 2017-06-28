@@ -1,6 +1,10 @@
 #### This codebase is to go over the entire [step-by-step process](https://github.com/eheckard23/Server_Stack/blob/master/setup.md) of setting up a remote Ubuntu 16.04 server securely with Linux, Nginx, MariaDB, and PHP. Once that is complete, the [SCP Deployment](#scp-deployment) section covers how to transfer basic files from your local machine to your remote server.
 
 ## Local Installation
+#### Prerequisites
+For this you will need a local folder on your computer to set up your environment.
+
+You can download this repo onto your local computer inside of a designated folder by clicking the download button at the top right corner, or see the official [WordPress](https://wordpress.org/) site to download the latest version of WordPress. **(You will then need to unzip and place the WordPress contents in your local designated folder.)**
 ## Server Setup
 [This document](https://github.com/eheckard23/Server_Stack/blob/master/setup.md) goes through the entire process of setting up an Ubuntu 16.04 with a full LEMP stack and HTTPS configuration.
 
