@@ -36,7 +36,30 @@ Hit `ENTER` and *optionally* add a passphrase for your key pair.
 **Note: If you entered a passphrase for the SSH keys you will have to enter that password as well when you login as root to your server in the next steps.**
 
 Once complete, the output should look like:
-IMAGE
+
+```bash
+ssh-keygen -t rsa
+Generating public/private rsa key pair.
+Enter file in which to save the key (/demo/.ssh/id_rsa): 
+Enter passphrase (empty for no passphrase): 
+Enter same passphrase again: 
+Your identification has been saved in /demo/.ssh/id_rsa.
+Your public key has been saved in /demo/.ssh/id_rsa.pub.
+The key fingerprint is:
+4a:dd:0a:c6:35:4e:3f:ed:27:38:8c:74:44:4d:93:67 demo@a
+The key's randomart image is:
++--[ RSA 2048]----+
+|          .oo.   |
+|         .  o.E  |
+|        + .  o   |
+|     . = = .     |
+|      = S = .    |
+|     o + = +     |
+|      . o + o .  |
+|           . o   |
+|                 |
++-----------------+
+```
 
 #### Copy the public SSH key to your server
 Copy the public key from the location you saved it in the previous step. In this case, from terminal, run:
@@ -179,7 +202,14 @@ Double check the status of your firewall by running:
 
 `$ sudo ufw status`
 
-IMAGE
+```bash
+Status: active
+
+To                         Action      From
+--                         ------      ----
+OpenSSH                    ALLOW       Anywhere
+OpenSSH (v6)               ALLOW       Anywhere (v6)
+```
 
 At this point your server is securely set up and you can begin to install any software you may need.
 
@@ -202,7 +232,16 @@ Double check the connections to Nginx appear by running:
 
 `$ sudo ufw status`
 
-IMAGE
+```bash
+Status: active
+
+To                         Action      From
+--                         ------      ----
+OpenSSH                    ALLOW       Anywhere                  
+Nginx HTTP                 ALLOW       Anywhere                  
+OpenSSH (v6)               ALLOW       Anywhere (v6)             
+Nginx HTTP (v6)            ALLOW       Anywhere (v6)
+```
 
 ### MariaDB
 Make sure everything in your local package index is update by running:
@@ -219,7 +258,9 @@ Confirm it's installed by running:
 
 `$ mysql -V`
 
-IMAGE
+The output should be similar to:
+
+`mysql  Ver 15.1 Distrib 10.1.22-MariaDB, for debian-linux-gnu (x86_64) using readline 5.2`
 
 Start and enable MariaDB by running:
 
@@ -283,11 +324,34 @@ Now, to let Nginx know to use the PHP processor you need to open the default Ngi
 1.	Add index.php as the first value of the index directive
 2. Set the server name to point to your IP address
 
-IMAGE
+```bash
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+
+    root /var/www/html;
+    index index.php index.html index.htm index.nginx-debian.html;
+
+    server_name server_domain_or_IP;
+
+    location / {
+        try_files $uri $uri/ =404;
+    }
+```
 
 3.	Uncomment the entire block starting with `location ~ \.php$`
 4. Uncomment the entire block starting with `location ~ /\.ht`
-IMAGE
+
+```bash
+location ~ \.php$ {
+        include snippets/fastcgi-php.conf;
+        fastcgi_pass unix:/run/php/php7.0-fpm.sock;
+    }
+
+    location ~ /\.ht {
+        deny all;
+    }
+```
 
 Save and Close the file
 
@@ -327,7 +391,11 @@ Webroot needs to place a file in the `/.well-known` directory in your document r
 
 Just under the `location ~ /\.ht` block, add this block of code:
 
-IMAGE
+```bash
+		location ~ /.well-known {
+                allow all;
+        }
+```
 
 Save and Close the file
 
@@ -351,9 +419,29 @@ Enter your email address and follow the propmts to agree to the terms of service
 
 You should see a success message that looks like:
 
-IMAGE
+```bash
+IMPORTANT NOTES:
+ - Congratulations! Your certificate and chain have been saved at
+   **/etc/letsencrypt/live/<YOUR_DOMAIN>.com**/fullchain.pem. Your cert
+   will expire on **2017-07-26**. To obtain a new or tweaked version of
+   this certificate in the future, simply run certbot again. To
+   non-interactively renew *all* of your certificates, run "certbot
+   renew"
+ - If you lose your account credentials, you can recover through
+   e-mails sent to sammy@example.com.
+ - Your account credentials have been saved in your Certbot
+   configuration directory at /etc/letsencrypt. You should make a
+   secure backup of this folder now. This configuration directory will
+   also contain certificates and private keys obtained by Certbot so
+   making regular backups of this folder is ideal.
+ - If you like Certbot, please consider supporting our work by:
 
-**Safely note down somewhere the path and expiration date highlighted above.**
+   Donating to ISRG / Let's Encrypt:   https://letsencrypt.org/donate
+   Donating to EFF:                    https://eff.org/donate-le
+```
+
+
+**Safely note down somewhere the path and expiration date that is surrounded by the asterisks ** above.**
 
 Check that your certificate files exist by running:
 
@@ -422,15 +510,33 @@ Open the regular file to adjust:
 
 `$ sudo nano /etc/nginx/sites-available/default`
 
-In order to redirect unencrypted HTTP requests to HTTPS, first start by adding a `server_name` directive and a `return 301`:
+In order to redirect unencrypted HTTP requests to HTTPS, first start by adding a `server_name` directive and a `return 301` in the initial server block:
 
-IMAGE
+```bash
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    server_name <YOUR_DOMAIN>.com;
+    return 301 https://$server_name$request_uri;
+}
+```
 
 **Be sure to close off that server block**
 
 Then open up a new server block just underneath this one to hold the rest of the configuration and add the following changes:
 
-IMAGE
+```bash
+server {
+
+    # SSL configuration
+
+    listen 443 ssl http2 default_server;
+    listen [::]:443 ssl http2 default_server;
+    include snippets/ssl-<YOUR_DOMAIN>.com.conf;
+    include snippets/ssl-params.conf;
+    
+    ...
+```
 
 Then look for the `server_name` variable within this SSL block and make sure it is set to `<YOUR_DOMAIN>.com;`
 
@@ -595,3 +701,92 @@ Create the `upgrade` directory to avoid permissions issues when WordPress update
 Copy the WordPress directory into our document root `/var/www/html/`
 
 `$ sudo cp -a /tmp/wordpress/. /var/www/html`
+
+##### Give your user ownership over the WordPress files
+`$ sudo chown -R <USERNAME>:www-data /var/www/html`
+
+##### Give the web server group ownership over the WordPress files:
+`$ sudo find /var/www/html -type d -exec chmod g+s {} \;`
+
+##### Give group write access to `wp-content`
+`$ sudo chmod g+w /var/www/html/wp-content`
+
+##### Give web server write access to WP content
+* `$ sudo chmod -R g+w /var/www/html/wp-content/themes`
+* `$ sudo chmod -R g+w /var/www/html/wp-content/plugins`
+
+#### Grab secret keys for secure installation
+`$ curl -s https://api.wordpress.org/secret-key/1.1/salt/`
+
+The resulting output should look like:
+
+```bash
+define('AUTH_KEY',         '1jl/vqfs<XhdXoAPz9 DO NOT COPY THESE VALUES c_j{iwqD^<+c9.k<J@4H');
+define('SECURE_AUTH_KEY',  'E2N-h2]Dcvp+aS/p7X DO NOT COPY THESE VALUES {Ka(f;rv?Pxf})CgLi-3');
+define('LOGGED_IN_KEY',    'W(50,{W^,OPB%PB<JF DO NOT COPY THESE VALUES 2;y&,2m%3]R6DUth[;88');
+define('NONCE_KEY',        'll,4UC)7ua+8<!4VM+ DO NOT COPY THESE VALUES #`DXF+[$atzM7 o^-C7g');
+define('AUTH_SALT',        'koMrurzOA+|L_lG}kf DO NOT COPY THESE VALUES  07VC*Lj*lD&?3w!BT#-');
+define('SECURE_AUTH_SALT', 'p32*p,]z%LZ+pAu:VY DO NOT COPY THESE VALUES C-?y+K0DK_+F|0h{!_xY');
+define('LOGGED_IN_SALT',   'i^/G2W7!-1H2OQ+t$3 DO NOT COPY THESE VALUES t6**bRVFSD[Hi])-qS`|');
+define('NONCE_SALT',       'Q6]U:K?j4L%Z]}h^q7 DO NOT COPY THESE VALUES 1% ^qUswWgn+6&xqHN&%');
+```
+Be sure to copy the output from **your** terminal and paste it in the wp-config file:
+
+`$ nano /var/www/html/wp-config.php`
+
+Scroll down to the section that has the dummy values for our keys:
+
+```bash
+ */
+define('AUTH_KEY',         'put your unique phrase here');
+define('SECURE_AUTH_KEY',  'put your unique phrase here');
+define('LOGGED_IN_KEY',    'put your unique phrase here');
+define('NONCE_KEY',        'put your unique phrase here');
+define('AUTH_SALT',        'put your unique phrase here');
+define('SECURE_AUTH_SALT', 'put your unique phrase here');
+define('LOGGED_IN_SALT',   'put your unique phrase here');
+define('NONCE_SALT',       'put your unique phrase here');
+```
+
+Make sure you **delete** all of these lines and **paste** the values you copied from the previous steps.
+
+Now go to the section at the top of this file that looks like:
+
+```bash
+/** The name of the database for WordPress */
+define('DB_NAME', 'database_name_here');
+
+/** MySQL database username */
+define('DB_USER', 'username_here');
+
+/** MySQL database password */
+define('DB_PASSWORD', 'password_here');
+```
+And change the values of the `'DB_NAME'`, `'DB_USER'`, and `'DB_PASSWORD'` to the values you made when you created your database and MariaDB user.
+
+Add this line underneath those define functions to give your web server permission the ability to write directly to your files:
+
+`define('FS_METHOD', 'direct');`
+
+Save and Close the file
+
+Hit `CTRL-x` to close then `y` to confirm changes and `ENTER` to confirm the filename.
+
+#### To complete installation, visit your server's domain in the browser.
+
+`http://<YOUR_DOMAIN_OR_IP_ADDRESS>`
+
+* Select the language you would like to use.
+* Enter in the title of your site, add a username **(It is recommended not to use 'admin')**
+* Add a password or use the one given to you **(Save that password somewhere)**
+* Add your email address and hit `Install`
+
+You should now be able to log in to your WordPress site.
+
+##### Whenever you need to upgrade your WordPress, log in to your server with your `sudo` user and run:
+
+`$ sudo chown -R www-data /var/www/html`
+
+##### Then lock the permissions back to for safety:
+
+`$ sudo chown -R <USERNAME> /var/www/html`
