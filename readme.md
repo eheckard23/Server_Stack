@@ -44,7 +44,7 @@ You should be able to see the contents:
         ...
 ```
 If you're file is good to go then you can use SCP to deploy this file to your remote server. To do so, in terminal run:
-104.236.209.24
+
 
 `$ scp humans.txt <USERNAME>@<YOUR_IP_ADDRESS>:/var/www/html`
 
