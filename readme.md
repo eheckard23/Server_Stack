@@ -5,8 +5,7 @@
 ## Server Setup
 
 
-Register for an account here
-https://www.digitalocean.com/
+### Register for a Digital Ocean account [here](https://www.digitalocean.com/)
 
 ### Create a droplet
 ![image](https://user-images.githubusercontent.com/17580530/27603515-4db92654-5b44-11e7-9e43-29093e963e38.png)
@@ -21,7 +20,35 @@ https://www.digitalocean.com/
 
 * **Don't worry about private networking/backups/etc**
 
-* Add SSH key if you have one already. If not, [heres a tutorial](https://www.digitalocean.com/community/tutorials/how-to-use-ssh-keys-with-digitalocean-droplets) on using them.
+* You may add an SSH key if you have one already. If you would like to create your key now the next section will go over that, but you may create the key later on in this guide.
+
+### Adding SSH Keys to Your Droplet
+After choosing a datacenter region for your server, you will see a section for optionally adding SSH keys to your server. If you have existing keys you would like to use go ahead, otherwise to generate a key pair, in a blank terminal on your machine run:
+
+`$ ssh-keygen -t rsa`
+
+The output should look like:
+
+`Enter file in which to save the key (/Users/<YOUR_USER>/.ssh/id_rsa): `
+
+Hit `ENTER` and *optionally* add a passphrase for your key pair.
+
+**Note: If you entered a passphrase for the SSH keys you will have to enter that password as well when you login as root to your server in the next steps.**
+
+Once complete, the output should look like:
+IMAGE
+
+#### Copy the public SSH key to your server
+Copy the public key from the location you saved it in the previous step. In this case, from terminal, run:
+
+`$ cat ~/.ssh/id_rsa.pub`
+
+Select the entire output and use `CMD-c` to copy it.
+
+Go back to your Digital Ocean server setup page, and enter the name of your local machine in the "Enter Name" field.
+
+Next, use `CMD-v` to paste the public key into the "Public SSH Key" field and hit "CREATE SSH KEY."
+ 
 * Select how many droplets you want and give each server a name
 * Select the server you want to view it's control panel
 
@@ -53,7 +80,7 @@ By now you should be logged in as `root`; in terminal to add the user you create
 `# usermod -aG sudo <USERNAME>`
 
 ### Public Key Authentication
-Skip this step if you already have an SSH key on your server.
+Skip this next step if you already have an SSH key on your server.
 #### Generate a Key Pair
 
 Open a new terminal window or logout of your server using `logout` and run:
@@ -123,4 +150,32 @@ Exit as **root** by running:
 
 `$ exit`
 
-Now you can use SSH to log in as your new user.
+Now you can use SSH to log in as your new user by running:
+
+`$ ssh <USERNAME>@<YOUR_IP_ADDRESS>`
+
+### Basic Firewall
+Ubuntu 16.04 has access to the UFW firewall.
+
+See what services are already registered with UFW by running:
+
+`$ sudo ufw app list`
+
+Under "Available applications:" you should see `OpenSSH`
+
+Make sure the firewall allows SSH connections for future logins by running:
+
+`$ sudo ufw allow OpenSSH`
+
+Then activate the firewall by running:
+
+`$ sudo ufw enable`
+
+Hit `y` and you should see the output:
+
+`Firewall is active and enabled on system startup`
+
+Double check the status of your firewall by running:
+
+`$ sudo ufw status`
+
